@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<programs>
+    <program>
+        <name>Combiner</name>
+        <inputfile>input1</inputfile>
+        <inputfile>input2</inputfile>
+        <outputdir>output</outputdir>
+    </program>
+    <program>
+        <name>Runhist</name>
+        <inputdir>input</inputdir>
+        <outputdir>output</outputdir>
+    </program>
+    <program>
+        <name>LatticeHist</name>
+        <inputdir>input</inputdir>
+        <outputfile>output</outputfile>
+    </program>
+    <program>
+        <name>Run02</name>
+        <inputdir>input</inputdir>
+        <outputdir>output</outputdir>
+    </program>
+    <program>
+        <name>TrimPipe</name>
+        <inputdir>input</inputdir>
+        <outputdir>output</outputdir>
+    </program>
+</programs>

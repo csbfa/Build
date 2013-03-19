@@ -1,0 +1,48 @@
+
+### Refer to UA Batch System website for system and queue specific limits (max values)
+### Minimize resource requests (ncpus, mem, walltime, cputime, etc) to minimize queue wait delays
+
+### Set the job name
+Name nameTest
+
+### Specify email address to use for notification.
+Email joncummings24@gmail.com
+
+### Specify the PI group for this job
+### List of PI groups available to each user can be found with "va" command
+Group mbsulli
+
+### Set the queue for this job as windfall or standard (adjust ### and #)
+
+Queue windfall
+
+### Set the jobtype for this job (serial, small_mpi, small_smp, large_mpi, large_smp)
+### Type parameter determines initial queue placement and possible automatic queue moves
+#Jobtype Serial
+
+### Set the number of cores (cpus) and memory that will be used for this job
+### When specifying memory request slightly less than 2GB memory per ncpus for standard node
+### Some memory needs to be reserved for the Linux system processes
+#Mem value will be interpreted as GB
+
+#Select 1
+#Ncpus  1
+#Mem    1
+
+### Important!!! Include this line for your 1p job.
+### Without it, the entire node, containing 12 core, will be allocated
+#Place pack:shared
+
+### Specify "wallclock time" required for this job, hhh:mm:ss
+
+#Walltime 000:05:00
+
+### Specify total cpu time required for this job, hhh:mm:ss
+### total cputime = walltime * ncpus
+#Cputime 000:05:00
+
+###Specify where error logs should be put for this job
+Errdir errlog
+
+###Specify where output logs should be put for this job
+Outdir outdir

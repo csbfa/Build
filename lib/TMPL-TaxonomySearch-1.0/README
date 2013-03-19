@@ -1,0 +1,20 @@
+TMPL::TaxonomySearch 1.0 -- a module for Taxonomy Searching off of the NCBI DB from a BLAST file
+
+	Copyright  ( c ) 2012 University of Arizona, Tucson Marine Phage Lab ( TMPL ).
+  	All rights reserved. Permission is granted to copy, distribute and/or modify this
+	document under the terms of the GNU Free Documentation License, Version 1.2
+	or any later version published by the Free Software Foundation; with no
+	Invariant Sections, with no Front-Cover Texts, and with no Back-Cover Texts.
+
+This module is designed for Perl 5.12.0 and later
+
+To install this module, please run:
+
+	perl Configure.PL
+	perl Build.PL
+	./Build installdeps ---cpan_client 'cpanp -i
+	./Build test
+	./Build install
+
+For more information on the module, please see the POD documentation
+inside TaxonomySearch.pm.  ("perldoc TMPL:: TaxonomySearch")
