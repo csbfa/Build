@@ -330,7 +330,7 @@ sub test_connection {
     my $result = 0;
     $p = Net::Ping->new();
     $logger->info("Testing internet connection...");
-    $result = 1 if ($p->ping('192.168.1.147'));
+    $result = 1 if ($p->ping('66.39.54.27'));
     $p->close();
     $result ? $logger->info("Network connection detected"): $logger->info("No network connection detected"); 
     return $result;
