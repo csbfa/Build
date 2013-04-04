@@ -12,7 +12,7 @@
 
 use v5.16.0;
 
-our $VERSION = 1.00;
+our $VERSION = 2.0;
 
 use strict;
 use warnings;
@@ -27,6 +27,8 @@ use Params::Check qw(check);
 use English qw( -no_match_vars ); 
 use Getopt::Long qw(:config bundling);
 use File::Basename;
+use File::HomeDir;
+use Data::Dumper;
 
 # CHECK IF ROOT USER
 die( "Unsufficent permissions. Must be root user" )
@@ -132,26 +134,33 @@ if ( $^O eq "MSWin32" ) {
 }
 
 # check if the version file exist under $pathTMPL folder
-if ( -e "$path"."TMPL/version.xml") {
+my $xpath = File::HomeDir->my_home."/TMPL/version.xml";
+
+#$logger->info("Version file $xpath ");
+
+if ( -e $xpath) {
 	# if version.xml exist it's version should be greate than our $VERSION 
 	
-	my $xpath = "$path"."TMPL/version.xml";
-
-    my $version_xml = XMLin($xpath);
-    
-    my $version = $version_xml->{version}->{tmpl_version}
-    
-	if ( $version < $VERSION ) {
+	my $version_xml = XMLin($xpath , KeyAttr => { version => 'name' }, ForceArray => [ 'version', 'tmplversion']);
+    my $version = $version_xml->{version}->{tmpl}->{tmplversion}->[0];
+    $logger->info("Version  on disk version $version installation version $version_xml->{version}->{tmpl}->{tmplversion}->[0] ");
+	if ( $version < $VERSION ) 
+	{
 		# do cleanup 
 		$logger->info("Version $version is not supported. Cleanup will be done and version $VERSION will be installed.");
-		clean_up("");
+		sanity_clean_up("");
+	}
+	else
+	{
+		#no need to install, already on the latest version
+		$logger->logdie("You are running the latest version of TMPL script !");
 	}
     
 }
 else 
 {
 	# first do sanity cleanup and then install everything
-	clean_up("");
+	sanity_clean_up("");
 }
 
 $logger->warn(R_REQ);
@@ -321,7 +330,7 @@ sub test_connection {
     my $result = 0;
     $p = Net::Ping->new();
     $logger->info("Testing internet connection...");
-    $result = 1 if ($p->ping('66.39.54.27'));
+    $result = 1 if ($p->ping('192.168.1.147'));
     $p->close();
     $result ? $logger->info("Network connection detected"): $logger->info("No network connection detected"); 
     return $result;
@@ -461,15 +470,18 @@ sub install_tmpl {
 	# if there is any error while copying TMPL files, clean will remove the already copied content, for fresh start on next try
 	# As per Zach, dependencies have their inbuilt clean in case of failure, so they need not to be handled.
     $path .= $SS unless( $path =~ m/^.*$SS$/i ); 
-    $mv_cmd = ( $^O eq 'MSWin32' ) ? "COPY /Y TMPL $path" : "cp -f -v TMPL $path";
+    $mv_cmd = ( $^O eq 'MSWin32' ) ? "COPY /Y TMPL $path" : "cp -f -v -r TMPL $path";
     ($retval, @result, $cmd) = sys_call($mv_cmd);
-    unless ( $retval == 0 ) { clean_up("Copy failed:\n\tat $path"."TMPL\n\tat TMPL\n\tat cmd $mv_cmd:\n\t$!"); } 
+    if ( $retval != 0 ) 
+    { 
+    	clean_up("Copy failed:\n\tat $path"."TMPL\n\tat TMPL\n\tat cmd $mv_cmd:\n\t$!"); 
+    } 
     
     # Version.XML to be copied for first installation for version control purposes
     $perl_path .= $SS unless( $perl_path =~ m/^.*$SS$/i ); 
-    my $mv_cmd = ( $^O eq 'MSWin32' ) ? "COPY /Y version.xml $pathTMPL/" : "cp -f -v version.xml $pathTMPL/";
+    $mv_cmd = ( $^O eq 'MSWin32' ) ? "COPY /Y TMPL/version.xml $path"."TMPL/" : "cp -f -v TMPL/version.xml $path"."TMPL/";
     ($retval, @result, $cmd) = sys_call($mv_cmd);
-    $logger->warn("Copy failed:\n\tat $pathTMPL/"."programsl\n\tat version.xml\n\tat cmd $mv_cmd:\n\t$!") 
+    $logger->warn("Copy failed:\n\tat $path"."TMPL/"."version.xml\n\tat version.xml\n\tat cmd $mv_cmd:\n\t$!") 
 	unless( $retval == 0 );
     
 }
@@ -628,6 +640,21 @@ sub clean_up {
     waitpid($pid, 0);
     $retval = $? >> 8;
 	$logger->logdie($_[0]) 
+}
+
+sub sanity_clean_up {
+
+    my ( $wtr, $rdr, $err, $pid, $retval, @result, $output );
+    # hard coded clean up string, function will be updated if we add more directories in installation
+    $pid = open3($wtr, $rdr, $err, "rm -rf $path"."TMPL");
+
+    while($output = <$rdr>) {
+	chomp($output);
+	$logger->info("$output");
+    }
+
+    waitpid($pid, 0);
+    $retval = $? >> 8;
 }
 
 1;
