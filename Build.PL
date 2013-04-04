@@ -16,7 +16,7 @@ our $VERSION = 1.00;
 
 use strict;
 use warnings;
-
+use XML::Simple qw(XMLin);
 use Cwd;
 use Net::Ping;
 use Pod::Usage;
@@ -129,6 +129,29 @@ if ( $^O eq "MSWin32" ) {
     $path = '~/' if($path eq '');
     $SS = '/';
 
+}
+
+# check if the version file exist under $pathTMPL folder
+if ( -e "$path"."TMPL/version.xml") {
+	# if version.xml exist it's version should be greate than our $VERSION 
+	
+	my $xpath = "$path"."TMPL/version.xml";
+
+    my $version_xml = XMLin($xpath);
+    
+    my $version = $version_xml->{version}->{tmpl_version}
+    
+	if ( $version < $VERSION ) {
+		# do cleanup 
+		$logger->info("Version $version is not supported. Cleanup will be done and version $VERSION will be installed.");
+		clean_up("");
+	}
+    
+}
+else 
+{
+	# first do sanity cleanup and then install everything
+	clean_up("");
 }
 
 $logger->warn(R_REQ);
@@ -428,18 +451,27 @@ sub install_archive {
 }
 
 sub install_tmpl {
-
+    # Why do we need program.xml, it is only used in TMPL.pl, which is junk now ( TBD )
     $perl_path .= $SS unless( $perl_path =~ m/^.*$SS$/i ); 
-    my $mv_cmd = ( $^O eq 'MSWin32' ) ? "MOVE /Y programs.xml $path" : "mv -f -v programs.xml $path";
+    my $mv_cmd = ( $^O eq 'MSWin32' ) ? "COPY /Y programs.xml $path" : "cp -f -v programs.xml $path";
     ($retval, @result, $cmd) = sys_call($mv_cmd);
-    $logger->warn("Move failed:\n\tat $perl_path"."programsl\n\tat programs.xml\n\tat cmd $mv_cmd:\n\t$!") 
+    $logger->warn("Copy failed:\n\tat $perl_path"."programsl\n\tat programs.xml\n\tat cmd $mv_cmd:\n\t$!") 
 	unless( $retval == 0 );
-
+	
+	# if there is any error while copying TMPL files, clean will remove the already copied content, for fresh start on next try
+	# As per Zach, dependencies have their inbuilt clean in case of failure, so they need not to be handled.
     $path .= $SS unless( $path =~ m/^.*$SS$/i ); 
-    $mv_cmd = ( $^O eq 'MSWin32' ) ? "MOVE /Y TMPL $path" : "mv -f -v TMPL $path";
+    $mv_cmd = ( $^O eq 'MSWin32' ) ? "COPY /Y TMPL $path" : "cp -f -v TMPL $path";
     ($retval, @result, $cmd) = sys_call($mv_cmd);
-    $logger->logdie("Move failed:\n\tat $path"."TMPL\n\tat TMPL\n\tat cmd $mv_cmd:\n\t$!") 
+    unless ( $retval == 0 ) { clean_up("Copy failed:\n\tat $path"."TMPL\n\tat TMPL\n\tat cmd $mv_cmd:\n\t$!"); } 
+    
+    # Version.XML to be copied for first installation for version control purposes
+    $perl_path .= $SS unless( $perl_path =~ m/^.*$SS$/i ); 
+    my $mv_cmd = ( $^O eq 'MSWin32' ) ? "COPY /Y version.xml $pathTMPL/" : "cp -f -v version.xml $pathTMPL/";
+    ($retval, @result, $cmd) = sys_call($mv_cmd);
+    $logger->warn("Copy failed:\n\tat $pathTMPL/"."programsl\n\tat version.xml\n\tat cmd $mv_cmd:\n\t$!") 
 	unless( $retval == 0 );
+    
 }
 
 sub move {
@@ -580,6 +612,22 @@ sub sys_call {
     $retval = $? >> 8;
     push(@result, " ") unless(@result);
     return ($retval, @result, " command: $_[0]: ");
+}
+
+sub clean_up {
+
+    my ( $wtr, $rdr, $err, $pid, $retval, @result, $output );
+    # hard coded clean up string, function will be updated if we add more directories in installation
+    $pid = open3($wtr, $rdr, $err, "rm -rf $path"."TMPL");
+
+    while($output = <$rdr>) {
+	chomp($output);
+	$logger->info("$output");
+    }
+
+    waitpid($pid, 0);
+    $retval = $? >> 8;
+	$logger->logdie($_[0]) 
 }
 
 1;
