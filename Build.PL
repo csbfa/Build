@@ -238,7 +238,7 @@ sub install_R {
 
     eval "use LWP;";
     if ( $@ ) {
-	($retval, @result, $cmd) = sys_call($perlbinpath . "cpan -i LWP");
+	($retval, @result, $cmd) = sys_call($perlbinpath . "cpanp -i LWP");
 	$logger->logdie("Failed to install LWP::Simple\n\tSee install.log for details") 
 	    unless(system $retval == 0 );
     }
@@ -393,7 +393,7 @@ sub install_mods {
 
         foreach $module ( @missing ) {
 
-	    ($retval, @result, $cmd) = sys_call($perlbinpath . "cpan -i $module");
+	    ($retval, @result, $cmd) = sys_call($perlbinpath . "cpanp -i $module");
 	    $logger->logdie("Failed to install $module: $!\n\tSee install.log for details") 
 	        unless(system $retval == 0 );
         }
@@ -605,8 +605,8 @@ sub build {
     $logger->logdie("Module build failed:\n\tat cmd 'perl Configure.PL':\n\tin $dir\n\t $!")
  	unless($retval != 1);
     
-    ($retval, @result, $cmd) = sys_call("$prefix"."Build installdeps --cpan_client '" . $perlbinpath . "cpan -i'");	
-    $logger->logdie("./Build failed: $dir:\n\tat cmd '$prefix"."Build manifest installdeps --cpan_client '" . $perlbinpath . "cpan -i'':\n\t $!") 
+    ($retval, @result, $cmd) = sys_call("$prefix"."Build installdeps --cpan_client '" . $perlbinpath . "cpanp -i'");	
+    $logger->logdie("./Build failed: $dir:\n\tat cmd '$prefix"."Build manifest installdeps --cpan_client '" . $perlbinpath . "cpanp -i'':\n\t $!") 
 	unless( $retval == 0 );
     
     ($retval, @result, $cmd) = sys_call("$prefix"."Build test");	
