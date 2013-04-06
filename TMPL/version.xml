@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <versionxml>
 <version name ="tmpl">
-    <tmplversion>2.0</tmplversion>
+    <tmplversion version="2.0"/>
 </version>
 </versionxml>

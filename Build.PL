@@ -16,7 +16,6 @@ our $VERSION = 2.0;
 
 use strict;
 use warnings;
-use XML::Simple qw(XMLin);
 use Cwd;
 use Net::Ping;
 use Pod::Usage;
@@ -29,6 +28,8 @@ use Getopt::Long qw(:config bundling);
 use File::Basename;
 use File::HomeDir;
 use Data::Dumper;
+use XML::LibXML;
+use XML::LibXML::Reader;
 
 # CHECK IF ROOT USER
 die( "Unsufficent permissions. Must be root user" )
@@ -135,15 +136,29 @@ if ( $^O eq "MSWin32" ) {
 
 # check if the version file exist under $pathTMPL folder
 my $xpath = File::HomeDir->my_home."/TMPL/version.xml";
-
+my $version = 0;
 #$logger->info("Version file $xpath ");
 
 if ( -e $xpath) {
 	# if version.xml exist it's version should be greate than our $VERSION 
 	
-	my $version_xml = XMLin($xpath , KeyAttr => { version => 'name' }, ForceArray => [ 'version', 'tmplversion']);
-    my $version = $version_xml->{version}->{tmpl}->{tmplversion}->[0];
-    $logger->info("Version  on disk version $version installation version $version_xml->{version}->{tmpl}->{tmplversion}->[0] ");
+	my $version_xml = XML::LibXML::Reader->new(location => $xpath);
+	
+	while ($version_xml->read) {
+	  if ($version_xml->nodeType == XML_READER_TYPE_ELEMENT) {
+	  	
+	    if ($version_xml->name eq "tmplversion" ) {
+	
+		 if ($version_xml->moveToFirstAttribute) {
+		 	  $version = $version_xml->value;
+		      $version_xml->moveToElement;
+		 }
+	    }
+	  }
+    }
+    
+    #my $version = $version_xml->{version}->{tmpl}->{tmplversion}->[0];
+    $logger->info("Version  on disk version $version installation version $VERSION ");
 	if ( $version < $VERSION ) 
 	{
 		# do cleanup 
@@ -223,7 +238,7 @@ sub install_R {
 
     eval "use LWP;";
     if ( $@ ) {
-	($retval, @result, $cmd) = sys_call($perlbinpath . "cpanp -i LWP");
+	($retval, @result, $cmd) = sys_call($perlbinpath . "cpan -i LWP");
 	$logger->logdie("Failed to install LWP::Simple\n\tSee install.log for details") 
 	    unless(system $retval == 0 );
     }
@@ -378,7 +393,7 @@ sub install_mods {
 
         foreach $module ( @missing ) {
 
-	    ($retval, @result, $cmd) = sys_call($perlbinpath . "cpanp -i $module");
+	    ($retval, @result, $cmd) = sys_call($perlbinpath . "cpan -i $module");
 	    $logger->logdie("Failed to install $module: $!\n\tSee install.log for details") 
 	        unless(system $retval == 0 );
         }
@@ -590,8 +605,8 @@ sub build {
     $logger->logdie("Module build failed:\n\tat cmd 'perl Configure.PL':\n\tin $dir\n\t $!")
  	unless($retval != 1);
     
-    ($retval, @result, $cmd) = sys_call("$prefix"."Build installdeps --cpan_client '" . $perlbinpath . "cpanp -i'");	
-    $logger->logdie("./Build failed: $dir:\n\tat cmd '$prefix"."Build manifest installdeps --cpan_client '" . $perlbinpath . "cpanp -i'':\n\t $!") 
+    ($retval, @result, $cmd) = sys_call("$prefix"."Build installdeps --cpan_client '" . $perlbinpath . "cpan -i'");	
+    $logger->logdie("./Build failed: $dir:\n\tat cmd '$prefix"."Build manifest installdeps --cpan_client '" . $perlbinpath . "cpan -i'':\n\t $!") 
 	unless( $retval == 0 );
     
     ($retval, @result, $cmd) = sys_call("$prefix"."Build test");	
