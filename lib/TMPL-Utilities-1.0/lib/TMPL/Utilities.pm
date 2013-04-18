@@ -1,4 +1,4 @@
-package Utilities;
+package TMPL::Utilities;
 
 =pod
 
