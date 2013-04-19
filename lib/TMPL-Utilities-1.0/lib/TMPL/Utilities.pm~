@@ -1,4 +1,4 @@
-package TMPL::Utilities;
+package Utilities;
 
 =pod
 
@@ -535,7 +535,7 @@ sub FileIO {
 			($filename, $path, $suffix) = fileparse($output_dir);
 		}
 
-	if ( -d $path and $path ne "./*" ) { # this checks for the validity of the path and prevents output to working dir
+	if ( -d $path and $path ne "./" ) { # this checks for the validity of the path and prevents output to working dir
 
 	    if ( $output_file ) {
 
